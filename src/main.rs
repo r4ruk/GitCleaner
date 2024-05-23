@@ -1,40 +1,48 @@
 use std::io::stdin;
 use std::process::{Command, Output};
 
-fn main() {
+/// Enum defining types of branches in list
+/// used for info printing
+#[derive(Debug)]
+enum BranchType {
+    Remotes,
+    Locals,
+    Stales
+}
 
-    let output = Command::new("git")
+
+fn main() {
+    let mut input = String::new();
+
+    let _output = Command::new("git")
         .arg("fetch")
         .output()
         .expect("Could not fetch from origin, is it a repository and is Internet connection given?");
-    println!("{:?}", output);
-
-    let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
-
 
     let locals = retrieve_locals();
-    println!("locals: ");
-    println!("{:?}", locals);
+    print_infos(BranchType::Locals, &locals);
 
-    let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
+    // stdin().read_line(&mut input).unwrap();
 
     let remotes = retrieve_remotes();
-    println!("remotes: ");
-    println!("{:?}", locals);
+    print_infos(BranchType::Remotes, &remotes);
 
     let stales = get_stale_branchnames(locals, remotes);
-    println!("stales: ");
-    println!("{:?}",stales);
+    print_infos(BranchType::Stales, &stales);
 
-    // TODO remove all stales on local which are not active (* ) at the moment.
-    // TODO still to be tested
     cleanup_stales(stales);
 
     stdin().read_line(&mut input).unwrap();
 }
 
+/// Prints informations about branch list.
+fn print_infos(branch_type: BranchType, branch_names: &Vec<String>) {
+    println!("{:?}", branch_type);
+    println!("{:?}", branch_names);
+    println!();
+}
+
+/// cleans all stale branches from local
 fn cleanup_stales(stales: Vec<String>) {
     let current_active = retrieve_actually_active();
     println!("Currently active");
@@ -56,7 +64,7 @@ fn cleanup_stales(stales: Vec<String>) {
     }
 }
 
-
+/// retrieves locally active branch
 fn retrieve_actually_active() -> String {
     let output = Command::new("git")
         .arg("branch")
@@ -73,7 +81,7 @@ fn retrieve_locals() -> Vec<String> {
         .arg("branch")
         .output()
         .expect("No local repository in the given path");
-    println!("{:?}", output);
+    // println!("{:?}", output);
 
     build_list(output)
 }
@@ -85,7 +93,7 @@ fn retrieve_remotes() -> Vec<String> {
         .arg("-r")
         .output()
         .expect("git should output at least any branch or this is not a tracked repository");
-    println!("{:?}", output);
+    // println!("{:?}", output);
 
     build_list(output)
 }
