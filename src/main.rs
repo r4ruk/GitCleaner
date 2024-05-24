@@ -1,5 +1,5 @@
 use std::io::stdin;
-use std::process::{Command, Output};
+use std::process::{Command, exit, Output};
 
 /// Enum defining types of branches in list
 /// used for info printing
@@ -17,7 +17,7 @@ fn main() {
     let _output = Command::new("git")
         .arg("fetch")
         .output()
-        .expect("Could not fetch from origin, is it a repository and is Internet connection given?");
+        .expect("Could not fetch from origin, is it a repository and is internet connection given?");
 
     let locals = retrieve_locals();
     print_infos(BranchType::Locals, &locals);
@@ -30,9 +30,14 @@ fn main() {
     let stales = get_stale_branchnames(locals, remotes);
     print_infos(BranchType::Stales, &stales);
 
-    cleanup_stales(stales);
-
+    println!("Are you sure you want to proceed and definitely delete all the stale Branches? (y / n)");
     stdin().read_line(&mut input).unwrap();
+    if input.trim() == "y" || input.trim() == "Y" {
+        cleanup_stales(stales);
+    }
+    println!("Enter to exit: ");
+    stdin().read_line(&mut input).unwrap();
+    exit(1);
 }
 
 /// Prints informations about branch list.
@@ -52,7 +57,7 @@ fn cleanup_stales(stales: Vec<String>) {
         if branch != current_active {
             let output = Command::new("git")
                 .arg("branch")
-                .arg("-d")
+                .arg("-D")
                 .arg(branch)
                 .output()
                 .expect("cannot delete branch locally");
